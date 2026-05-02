@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+google-cloud-aiplatform
+pydantic
+python-dotenv
+google-cloud-datastore
+google-cloud-aiplatform

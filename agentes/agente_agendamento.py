@@ -10,4 +10,6 @@ class AgenteAgendamento(BaseAgente):
                          - Confirmar disponibilidade
                          - Não fazer orçamento
                          - Ser direto e organizacional
-                         """)
+                         """,
+                         categoria=""
+                         )

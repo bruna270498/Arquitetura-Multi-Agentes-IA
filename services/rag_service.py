@@ -1,49 +1,22 @@
-from vertexai.language_models import TextEmbeddingModel
-from google.cloud import datastore
-import math
+import os
+from vertexai.preview import rag
+from dotenv import load_dotenv
 
-ds_client = datastore.Client()
+load_dotenv()
 
-model = TextEmbeddingModel.from_pretrained("textembedding-gecko")
+RAG_SOBRE_ID = os.getenv("RAG_SOBRE_ID")
+RAG_ORCAMENTO_ID = os.getenv("RAG_ORCAMENTO_ID")
 
+def _query_rag(corpus_id: str, pergunta: str):
+    """
+    Função genérica para qualquer RAG
+    """
+    corpus = rag.RagCorpus(corpus_id)
+    response = corpus.query(text=pergunta)
+    return response
 
-def gerar_embedding(texto):
-    return model.get_embeddings([texto])[0].values
+def buscar_contexto_sobre(pergunta: str) -> str:
+    return _query_rag(RAG_SOBRE_ID, pergunta)
 
-
-def cosine_similarity(a, b):
-    dot = sum(x*y for x, y in zip(a, b))
-    norm_a = math.sqrt(sum(x*x for x in a))
-    norm_b = math.sqrt(sum(x*x for x in b))
-    return dot / (norm_a * norm_b)
-
-
-def buscar_contexto(pergunta, categoria=None):
-    emb_pergunta = gerar_embedding(pergunta)
-
-    query = ds_client.query(kind="powerseg_knowledge")
-
-    if categoria:
-        query.add_filter("category", "=", categoria)
-
-    dados = list(query.fetch())
-
-    resultados = []
-
-    for item in dados:
-        emb = item.get("embedding")
-        if not emb:
-            continue
-
-        score = cosine_similarity(emb_pergunta, emb)
-
-        resultados.append({
-            "score": score,
-            "content": item["content"]
-        })
-
-    resultados.sort(key=lambda x: x["score"], reverse=True)
-
-    top = resultados[:3]
-
-    return "\n".join([r["content"] for r in top])
+def buscar_contexto_orcamento(pergunta: str) -> str:
+    return _query_rag(RAG_ORCAMENTO_ID, pergunta)

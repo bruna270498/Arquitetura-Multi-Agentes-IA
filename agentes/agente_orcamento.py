@@ -1,4 +1,5 @@
 from BaseAgente import BaseAgente
+from services.rag_service import buscar_contexto_orcamento
 
 
 class AgenteOrcamento(BaseAgente):
@@ -12,3 +13,19 @@ class AgenteOrcamento(BaseAgente):
                          - Nunca agendar serviço
                          - Nunca encaminhar para outros agentes
                          """)
+        
+    def responder(self, msg: str):
+        contexto = buscar_contexto_orcamento(msg)
+        prompt = self._montar_prompt(msg, contexto)
+        return super().responder(prompt)
+
+    def _montar_prompt(self, msg: str, contexto: str):
+
+        if contexto:
+            return f"""
+            Você é um assistente da Powerseg
+            Use o contexto abaixo para responder com precisão.
+            Contexto da empresa:{contexto}
+            Pergunta do cliente:{msg}"""
+            
+        return f"""Você é um assistente da Powerseg.Responda com base no seu conhecimento interno e boas práticas.Pergunta do cliente:{msg}"""

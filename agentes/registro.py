@@ -1,21 +1,15 @@
-from agente_orcamento import AgenteOrcamento
-from agente_agendamento import AgenteAgendamento
-from agente_duvidas import AgenteDuvidas
-from agente_orquestrador import agente_orquestrador
+from .agente_orcamento import AgenteOrcamento
+from .agente_agendamento import AgenteAgendamento
+from .agente_duvidas import AgenteDuvidas
 
-# Instâncias únicas (singleton simples)
-agente_orcamento = AgenteOrcamento()
+agente_orcamento   = AgenteOrcamento()
 agente_agendamento = AgenteAgendamento()
-agente_duvidas = AgenteDuvidas()
+agente_duvidas     = AgenteDuvidas()
 
-
-# Função para pegar agente dinamicamente
 def get_agente(nome):
     agentes = {
-        "orcamento": agente_orcamento,
+        "orcamento":   agente_orcamento,
         "agendamento": agente_agendamento,
-        "duvidas": agente_duvidas,
-        "orquestrador": agente_orquestrador
+        "duvidas":     agente_duvidas,
     }
-
     return agentes.get(nome)

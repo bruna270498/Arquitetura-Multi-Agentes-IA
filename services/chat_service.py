@@ -1,16 +1,17 @@
 from datetime import datetime
 from agentes.registro import get_agente
+from agentes.agente_orquestrador import extrair_agente
 from services.session import (
     atualizar_interacao,
     ja_saudou,
-    marcar_saudacao
+    marcar_saudacao,
+    sessoes
 )
 
 # Instâncias dos agentes
 agente_orcamento = get_agente("orcamento")
 agente_duvidas = get_agente("duvidas")
 agente_agendamento = get_agente("agendamento")
-agente_orquestrador = get_agente("orquestrador")
 
 # Saudação
 def saudacao():
@@ -43,28 +44,23 @@ def extrair_tool(response):
 
 
 # Executa agente
-def executar_agente(nome_agente, msg):
+def executar_agente(nome_agente, msg, cliente_id):
     if nome_agente == "orcamento":
-        return agente_orcamento.responder(msg)
-
+        return agente_orcamento.responder(msg, cliente_id)
     elif nome_agente == "agendamento":
-        return agente_agendamento.responder(msg)
-
+        return agente_agendamento.responder(msg, cliente_id)
     elif nome_agente == "duvidas":
-        return agente_duvidas.responder(msg)
-
+        return agente_duvidas.responder(msg, cliente_id)
     return "Desculpe, não consegui entender. Pode reformular?"
 
+PALAVRAS_AGENDAMENTO = ["agendar visita", "quero agendar", "agendar serviço", "marcar visita", "visita técnica"]
+PALAVRAS_CONFIRMA = ["sim", "confirmo", "pode agendar", "quero agendar", "agendar"]
 
-# Fluxo principal
 def processar_chat(mensagem, cliente_id):
-
     mensagem = mensagem.strip()
-
-    # 🔹 Atualiza sessão
+    msg_lower = mensagem.lower()
     atualizar_interacao(cliente_id)
 
-    # Saudação inteligente
     if is_saudacao(mensagem) and not ja_saudou(cliente_id):
         marcar_saudacao(cliente_id)
         return saudacao()
@@ -72,9 +68,26 @@ def processar_chat(mensagem, cliente_id):
     if is_saudacao(mensagem):
         return "Como posso te ajudar?"
 
-    # Orquestrador
-    intent = agente_orquestrador.generate_content(mensagem)
-    agente = extrair_tool(intent)
+    if cliente_id not in sessoes:
+        sessoes[cliente_id] = {}
 
-    # Executa agente
-    return executar_agente(agente, mensagem)
+    agente_atual = sessoes[cliente_id].get("agente_atual", "")
+
+    # 1. Usuário pede visita diretamente → agendamento
+    if any(p in msg_lower for p in PALAVRAS_AGENDAMENTO):
+        sessoes[cliente_id]["agente_atual"] = "agendamento"
+        return agente_agendamento.responder(mensagem, cliente_id)
+
+    # 2. Veio do orçamento e confirmou → agendamento
+    if agente_atual == "orcamento" and any(p in msg_lower for p in PALAVRAS_CONFIRMA):
+        sessoes[cliente_id]["agente_atual"] = "agendamento"
+        return agente_agendamento.responder(mensagem, cliente_id)
+
+    # 3. Já está no agendamento → continua
+    if agente_atual == "agendamento":
+        return agente_agendamento.responder(mensagem, cliente_id)
+
+    # 4. Orquestrador decide
+    agente = extrair_agente(mensagem)
+    sessoes[cliente_id]["agente_atual"] = agente
+    return executar_agente(agente, mensagem, cliente_id)

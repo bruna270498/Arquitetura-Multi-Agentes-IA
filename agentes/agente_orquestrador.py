@@ -1,48 +1,54 @@
-from vertexai.generative_models import GenerativeModel
+import os
+from google import genai
+from google.genai import types
 
-#Este é o cérebro do nossos agentes
-agente_orquestrador = GenerativeModel(
-    "gemini-2.5-flash",
-    system_instruction="""
-    Você é um roteador de atendimento.
-    Sua única função é escolher qual agente deve atender o usuário.
-
-    Agentes disponíveis:
-    - duvidas
-    - orcamento
-    - agendamento
-
-    Regras:
-    - Nunca responda ao usuário
-    - Nunca explique nada
-    - Sempre use function calling
-
-    Escolha o agente correto baseado na intenção do usuário.
-    """,
-    tools=[
-        {
-            "function_declarations": [
-                {
-                    "name": "duvidas",
-                    "description": "Encaminha para agente de dúvidas"
-                },
-                {
-                    "name": "orcamento",
-                    "description": "Encaminha para agente de orçamento"
-                },
-                {
-                    "name": "agendamento",
-                    "description": "Encaminha para agente de agendamento"
-                }
-            ]
-        }
-    ],
-    tool_config={
-        "function_calling_config": {
-            "mode": "ANY"
-        }
-    },
-    generation_config={
-        "temperature": 0.0
-    }
+# Voltamos para o Vertex Empresarial!
+client = genai.Client(
+    vertexai=True,
+    project="-",
+    location="us-central1"
 )
+
+# No Vertex, o nome exige a versão no final. Vamos usar a mais atual e estável:
+MODEL = "gemini-2.5-flash"
+SYSTEM = """
+Você é um roteador de atendimento.
+Sua única função é escolher qual agente deve atender o usuário.
+
+Agentes disponíveis:
+- duvidas: informações, quais serviços fazemos, como funciona.
+- orcamento: cliente quer saber preço, valor, quanto custa, ou simular orçamento.
+- agendamento: cliente quer agendar visita técnica ou confirmar.
+
+Responda APENAS com uma palavra: duvidas, orcamento ou agendamento.
+"""
+
+def extrair_agente(mensagem: str) -> str:
+    try:
+        response = client.models.generate_content(
+            model=MODEL,
+            contents=mensagem,
+            config=types.GenerateContentConfig(
+                system_instruction=SYSTEM,
+                temperature=0.0
+            )
+        )
+        
+        # Pega o texto com segurança para não dar o erro de 'NoneType'
+        texto = response.text if response.text else ""
+        agente = texto.strip().lower()
+        
+        print(f"🕵️ ORQUESTRADOR ESCOLHEU: '{agente}'")
+        
+        # Procura a palavra mágica dentro da resposta
+        if "orcamento" in agente:
+            return "orcamento"
+        elif "agendamento" in agente:
+            return "agendamento"
+        else:
+            return "duvidas"
+            
+    except Exception as e:
+        print(f"❌ Erro no Orquestrador: {e}")
+        
+    return "duvidas"

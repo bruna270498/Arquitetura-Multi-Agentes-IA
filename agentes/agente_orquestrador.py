@@ -2,15 +2,15 @@ import os
 from google import genai
 from google.genai import types
 
-# Voltamos para o Vertex Empresarial!
+#Vertex Empresarial!
 client = genai.Client(
     vertexai=True,
-    project="-",
-    location="us-central1"
+    project=os.getenv("PROJECT_ID"),
+    location=os.getenv("LOCATION")
 )
 
-# No Vertex, o nome exige a versão no final. Vamos usar a mais atual e estável:
-MODEL = "gemini-2.5-flash"
+MODEL = os.getenv("MODEL_ID")
+
 SYSTEM = """
 Você é um roteador de atendimento.
 Sua única função é escolher qual agente deve atender o usuário.
@@ -49,6 +49,5 @@ def extrair_agente(mensagem: str) -> str:
             return "duvidas"
             
     except Exception as e:
-        print(f"❌ Erro no Orquestrador: {e}")
-        
+        print(f"Erro no Orquestrador: {e}")       
     return "duvidas"

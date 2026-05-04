@@ -1,6 +1,6 @@
 
 // ── URL do seu FastAPI ──────────────────────────────────────────
-const API_URL = "https://powerseg-agent-787425613859.us-central1.run.app/chat"; // em produção troque pela URL do Cloud Run
+const API_URL = 'https://arquitetura-multi-agentes-ia-787425613859.us-central1.run.app/chat'; // em produção troque pela URL do Cloud Run
 
 let isOpen = false;
 let isTyping = false;

@@ -3,16 +3,13 @@ from google import genai
 from google.genai import types
 from regra_global import REGRA_GLOBAL
 
-# Voltamos para o Vertex Empresarial!
 client = genai.Client(
     vertexai=True,
-    project="-",
-    location="us-central1"
+    project=os.getenv("PROJECT_ID"),
+    location=os.getenv("LOCATION")
 )
 
-# No Vertex, o nome exige a versão no final. Vamos usar a mais atual e estável:
-MODEL = "gemini-2.5-flash" 
-
+MODEL = os.getenv("MODEL_ID")
 
 class BaseAgente:
     def __init__(self, system_prompt: str):
@@ -24,17 +21,17 @@ class BaseAgente:
 
         hist.append(types.Content(role="user", parts=[types.Part(text=prompt)]))
           # ====================================================
-        # INÍCIO DO RAIO-X (COLE ESTE BLOCO AQUI)
+        # INÍCIO
         # ====================================================
         print("\n" + "="*50)
-        print("🕵️  RAIO-X: O QUE O GEMINI ESTÁ LENDO DE VERDADE?")
+        print("O QUE O GEMINI ESTÁ LENDO DE VERDADE?")
         print("="*50)
-        print(f"📌 AGENTE ACIONADO: {self.__class__.__name__}")
+        print(f"AGENTE ACIONADO: {self.__class__.__name__}")
         print("-" * 50)
-        print("📜 SYSTEM INSTRUCTION (REGRAS):")
+        print("SYSTEM INSTRUCTION (REGRAS):")
         print(self.system)
         print("-" * 50)
-        print("📚 HISTÓRICO DA CONVERSA:")
+        print(" HISTÓRICO DA CONVERSA:")
         for h in hist:
             print(f"{h.role.upper()}: {h.parts[0].text}")
         print("="*50 + "\n")
